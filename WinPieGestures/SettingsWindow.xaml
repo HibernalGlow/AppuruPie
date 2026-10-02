@@ -972,51 +972,139 @@
                       <ItemsControl Name="GestureMappingsItemsControl">
                         <ItemsControl.ItemTemplate>
                           <DataTemplate>
-                            <Grid Margin="0,0,0,8">
-                              <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="110" />
-                                <ColumnDefinition Width="110" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="70" />
-                                <ColumnDefinition Width="44" />
-                                <ColumnDefinition Width="34" />
-                              </Grid.ColumnDefinitions>
-                              <ComboBox Grid.Column="0" Height="30" FontSize="11" ItemsSource="{Binding PatternChoices}" SelectedValuePath="Tag" DisplayMemberPath="DisplayText" SelectedValue="{Binding Pattern, Mode=TwoWay}" Style="{StaticResource FlatComboBoxStyle}" />
-                              <ComboBox Grid.Column="1" Height="30" FontSize="11" ItemsSource="{Binding ActionTypes}" SelectedValuePath="Tag" DisplayMemberPath="DisplayText" SelectedValue="{Binding Type, Mode=TwoWay}" Style="{StaticResource FlatComboBoxStyle}" Margin="4,0,0,0" />
-                              <Grid Grid.Column="2" Margin="4,0,0,0">
-                                <local:HotkeyRecorderBox Height="30" FontSize="11" HotkeyText="{Binding Parameter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Visibility="{Binding IsHotkeyType, Converter={StaticResource BoolToVis}}" />
-                                <Grid Visibility="{Binding IsLaunchType, Converter={StaticResource BoolToVis}}">
+                            <Border Background="{DynamicResource SubtleCardBrush}" BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1" CornerRadius="6" Padding="8,6" Margin="0,0,0,8" SnapsToDevicePixels="True">
+                              <Grid>
+                                <Grid.RowDefinitions>
+                                  <RowDefinition Height="Auto" />
+                                  <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <!-- Row 0: Pattern, Type, Name, Test, Delete -->
+                                <Grid Margin="0,0,0,6">
                                   <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" MinWidth="80" MaxWidth="240" />
                                     <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="36" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
                                   </Grid.ColumnDefinitions>
-                                  <TextBox Text="{Binding Parameter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Height="30" FontSize="11" VerticalContentAlignment="Center" IsReadOnly="True" ToolTip="{Binding AppPathTip}" />
-                                  <Button Grid.Column="1" Content="📁" Height="30" Width="34" Margin="4,0,0,0" Padding="0" FontSize="12" Style="{StaticResource ModernButtonStyle}" Click="GestureBrowse_Click" ToolTip="{Binding BrowseAppTip}" />
+                                  <ComboBox Grid.Column="0" Height="30" Width="110" FontSize="11" ItemsSource="{Binding PatternChoices}" SelectedValuePath="Tag" DisplayMemberPath="DisplayText" SelectedValue="{Binding Pattern, Mode=TwoWay}" Style="{StaticResource FlatComboBoxStyle}" />
+                                  <ComboBox Grid.Column="1" Height="30" Width="210" FontSize="11" ItemsSource="{Binding ActionTypes}" SelectedValuePath="Tag" DisplayMemberPath="DisplayText" SelectedValue="{Binding AggregatedType, Mode=TwoWay}" Style="{StaticResource FlatComboBoxStyle}" Margin="4,0,0,0" />
+                                  <TextBox Grid.Column="2" Height="30" FontSize="11" Margin="4,0,0,0" VerticalContentAlignment="Center" Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ToolTip="{Binding CustomNameTip}" />
+                                  <Button Grid.Column="4" Content="{Binding TestButtonText}" Height="30" Margin="4,0,0,0" Padding="8,0" FontSize="11" Style="{StaticResource ModernButtonStyle}" Click="TestGesture_Click" />
+                                  <Button Grid.Column="5" Content="✕" Height="30" Width="30" Padding="0" Margin="4,0,0,0" FontSize="11" Style="{StaticResource DangerButtonStyle}" Click="DeleteGestureMapping_Click" ToolTip="{Binding DeleteButtonTip}" />
                                 </Grid>
-                                <Grid Visibility="{Binding IsFolderType, Converter={StaticResource BoolToVis}}">
-                                  <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="36" />
-                                  </Grid.ColumnDefinitions>
-                                  <TextBox Text="{Binding Parameter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Height="30" FontSize="11" VerticalContentAlignment="Center" ToolTip="{Binding FolderPathTip}" />
-                                  <Button Grid.Column="1" Content="📂" Height="30" Width="34" Margin="4,0,0,0" Padding="0" FontSize="12" Style="{StaticResource ModernButtonStyle}" Click="GestureBrowseFolder_Click" ToolTip="{Binding BrowseFolderTip}" />
+                                <!-- Row 1: Parameter & Configuration Panel -->
+                                <Grid Grid.Row="1" MaxWidth="760" HorizontalAlignment="Stretch">
+                                  <Grid Visibility="{Binding IsHotkeyType, Converter={StaticResource BoolToVis}}" HorizontalAlignment="Stretch">
+                                    <Grid.ColumnDefinitions>
+                                      <ColumnDefinition Width="*" />
+                                      <ColumnDefinition Width="Auto" />
+                                      <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <local:HotkeyRecorderBox Height="30" FontSize="11" HotkeyText="{Binding Parameter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Stretch" />
+                                    <Button Grid.Column="1" Height="30" Padding="8,0" Margin="4,0,0,0" FontSize="11" Style="{StaticResource ModernButtonStyle}"
+                                            Content="{Binding PauseHotkeysButtonText}"
+                                            ToolTip="{Binding PauseHotkeysToolTip}"
+                                            Click="GestureTogglePauseHotkeys_Click" />
+                                    <Button Grid.Column="2" Height="30" Padding="8,0" Margin="4,0,0,0" FontSize="11" Style="{StaticResource ModernButtonStyle}"
+                                            Content="{Binding HotkeyBuilderButtonText}"
+                                            ToolTip="{Binding HotkeyBuilderToolTip}"
+                                            Click="GestureHotkeyBuilder_Click" />
+                                  </Grid>
+                                  <StackPanel Visibility="{Binding IsLaunchType, Converter={StaticResource BoolToVis}}" HorizontalAlignment="Stretch">
+                                    <Grid Margin="0,0,0,4">
+                                      <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                      </Grid.ColumnDefinitions>
+                                      <TextBox Text="{Binding Parameter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Height="30" FontSize="11" VerticalContentAlignment="Center" ToolTip="{Binding AppPathTip}" />
+                                      <Button Grid.Column="1" Height="30" Padding="8,0" Margin="4,0,0,0" FontSize="11" Style="{StaticResource ModernButtonStyle}"
+                                              Content="{Binding PickProgramButtonText}"
+                                              ToolTip="{Binding PickProgramToolTip}"
+                                              Click="GesturePickProgramFromLibrary_Click" />
+                                      <Button Grid.Column="2" Height="30" Padding="8,0" Margin="4,0,0,0" FontSize="11" Style="{StaticResource ModernButtonStyle}"
+                                              Content="{Binding CaptureWindowButtonText}"
+                                              ToolTip="{Binding CaptureWindowToolTip}"
+                                              Click="GestureCaptureRunningWindow_Click" />
+                                      <Button Grid.Column="3" Height="30" Padding="8,0" Margin="4,0,0,0" FontSize="11" Style="{StaticResource ModernButtonStyle}"
+                                              Content="{Binding BrowseExeButtonText}"
+                                              ToolTip="{Binding BrowseExeToolTip}"
+                                              Click="GestureBrowse_Click" />
+                                    </Grid>
+                                    <Grid Margin="0,0,0,4">
+                                      <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                      </Grid.ColumnDefinitions>
+                                      <TextBlock Text="{Binding LaunchArgsLabel}" VerticalAlignment="Center" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,6,0" />
+                                      <TextBox Grid.Column="1" Text="{Binding Arguments, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Height="28" FontSize="11" VerticalContentAlignment="Center" ToolTip="{Binding LaunchArgsToolTip}" />
+                                    </Grid>
+                                    <CheckBox IsChecked="{Binding RunAsStandardUser, Mode=TwoWay}" Style="{StaticResource ToggleSwitchStyle}" Margin="0,2,0,0">
+                                      <TextBlock Text="{Binding RunAsStandardUserLabel}" ToolTip="{Binding RunAsStandardUserToolTip}" FontSize="11" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap" Margin="4,0,0,0" VerticalAlignment="Center" />
+                                    </CheckBox>
+                                  </StackPanel>
+                                  <TextBox Text="{Binding Parameter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Height="30" FontSize="11" VerticalContentAlignment="Center" Visibility="{Binding IsWebUrlType, Converter={StaticResource BoolToVis}}" ToolTip="{Binding WebUrlTip}" />
+                                  <Grid Visibility="{Binding IsFolderType, Converter={StaticResource BoolToVis}}">
+                                    <Grid.ColumnDefinitions>
+                                      <ColumnDefinition Width="*" />
+                                      <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox Text="{Binding Parameter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Height="30" FontSize="11" VerticalContentAlignment="Center" ToolTip="{Binding FolderPathTip}" />
+                                    <Button Grid.Column="1" Content="📂" Height="30" Width="34" Margin="4,0,0,0" Padding="0" FontSize="12" Style="{StaticResource ModernButtonStyle}" Click="GestureBrowseFolder_Click" ToolTip="{Binding BrowseFolderTip}" />
+                                  </Grid>
+                                  <ComboBox SelectedValuePath="Key" DisplayMemberPath="Value" Style="{StaticResource FlatComboBoxStyle}" Height="30" FontSize="11" SelectedValue="{Binding SelectedSystemPreset, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ItemsSource="{Binding Source={x:Static local:SlotViewModel.SystemPresets}}" Visibility="{Binding IsSystemType, Converter={StaticResource BoolToVis}}" />
+                                  <Grid Visibility="{Binding IsCommandType, Converter={StaticResource BoolToVis}}">
+                                    <Grid.ColumnDefinitions>
+                                      <ColumnDefinition Width="*" />
+                                      <ColumnDefinition Width="130" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox Text="{Binding Parameter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Height="30" FontSize="11" VerticalContentAlignment="Center" ToolTip="{Binding CmdTip}" />
+                                    <ComboBox Grid.Column="1" Width="124" Margin="4,0,0,0" ItemsSource="{Binding Terminals}" SelectedValuePath="Tag" DisplayMemberPath="DisplayText" SelectedValue="{Binding CommandTerminal, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FlatComboBoxStyle}" Height="30" FontSize="10.5" />
+                                  </Grid>
+                                  <Grid Visibility="{Binding IsWindowManagerType, Converter={StaticResource BoolToVis}}">
+                                    <Grid.ColumnDefinitions>
+                                      <ColumnDefinition Width="160" />
+                                      <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <ComboBox ItemsSource="{Binding WindowManagerSubModes}" SelectedValuePath="Tag" DisplayMemberPath="DisplayText" SelectedValue="{Binding WindowManagerSubMode, Mode=TwoWay}" Style="{StaticResource FlatComboBoxStyle}" Height="30" FontSize="11" />
+                                    <ComboBox Grid.Column="1" Margin="4,0,0,0" SelectedValuePath="Tag" DisplayMemberPath="DisplayText" ItemsSource="{Binding TileLayoutOptions}" SelectedValue="{Binding TileLayout, Mode=TwoWay}" SelectionChanged="TileLayoutComboBox_SelectionChanged" Style="{StaticResource FlatComboBoxStyle}" Height="30" FontSize="11" Visibility="{Binding IsTileSubMode, Converter={StaticResource BoolToVis}}" ToolTip="{Binding TilePresetTip}" />
+                                    <TextBox Grid.Column="1" Margin="4,0,0,0" Text="{Binding NthWindowIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Height="30" FontSize="11" VerticalContentAlignment="Center" Visibility="{Binding IsSwitchWindowSubMode, Converter={StaticResource BoolToVis}}" ToolTip="{Binding TaskbarSlotTip}" />
+                                    <TextBox Grid.Column="1" Margin="4,0,0,0" Text="{Binding Parameter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Height="30" FontSize="11" VerticalContentAlignment="Center" Visibility="{Binding IsOpacitySubMode, Converter={StaticResource BoolToVis}}" ToolTip="{Binding OpacityTip}" />
+                                  </Grid>
+                                  <Grid Visibility="{Binding IsShellToolType, Converter={StaticResource BoolToVis}}">
+                                    <Grid.ColumnDefinitions>
+                                      <ColumnDefinition Width="*" />
+                                      <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox Text="{Binding ShellToolTitle, Mode=OneWay}" IsReadOnly="True" Height="30" FontSize="11" VerticalContentAlignment="Center" ToolTip="{Binding ShellToolTitle}" />
+                                    <Button Grid.Column="1" Content="{Binding PickShellToolText}" Height="30" Margin="4,0,0,0" Padding="10,0" FontSize="11" Style="{StaticResource ModernButtonStyle}" Click="GesturePickShellTool_Click" ToolTip="{Binding BrowseShellToolTip}" />
+                                  </Grid>
+                                  <Grid Visibility="{Binding IsPluginType, Converter={StaticResource BoolToVis}}">
+                                    <Grid.ColumnDefinitions>
+                                      <ColumnDefinition Width="*" />
+                                      <ColumnDefinition Width="Auto" />
+                                      <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <ComboBox Style="{StaticResource FlatComboBoxStyle}" Height="30" FontSize="11" SelectedValuePath="FullId" DisplayMemberPath="DisplayName" ItemsSource="{Binding PluginActionOptions}" SelectedValue="{Binding SelectedPluginActionFullId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                      <ComboBox.GroupStyle>
+                                        <GroupStyle>
+                                          <GroupStyle.HeaderTemplate>
+                                            <DataTemplate>
+                                              <TextBlock Text="{Binding Name}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AccentPrimaryBrush}" Margin="4,6,0,3" />
+                                            </DataTemplate>
+                                          </GroupStyle.HeaderTemplate>
+                                        </GroupStyle>
+                                      </ComboBox.GroupStyle>
+                                    </ComboBox>
+                                    <Button Grid.Column="1" Content="{Binding PluginParamsButtonText}" Height="30" Margin="4,0,0,0" Padding="10,0" FontSize="11" Style="{StaticResource ModernButtonStyle}" Visibility="{Binding HasPluginParameters, Converter={StaticResource BoolToVis}}" Click="GestureEditPluginParams_Click" ToolTip="{Binding PluginParamsTip}" />
+                                    <TextBlock Grid.Column="2" Text="⚠️" Foreground="#D97706" FontSize="14" VerticalAlignment="Center" Margin="4,0,0,0" Visibility="{Binding IsPluginActionBroken, Converter={StaticResource BoolToVis}}" ToolTip="{Binding PluginActionBrokenTip}" />
+                                  </Grid>
                                 </Grid>
-                                <ComboBox SelectedValuePath="Key" DisplayMemberPath="Value" Style="{StaticResource FlatComboBoxStyle}" Height="30" FontSize="11" SelectedValue="{Binding SelectedSystemPreset, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ItemsSource="{Binding Source={x:Static local:SlotViewModel.SystemPresets}}" Visibility="{Binding IsSystemType, Converter={StaticResource BoolToVis}}" />
-                                <Grid Visibility="{Binding IsCommandType, Converter={StaticResource BoolToVis}}">
-                                  <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="112" />
-                                  </Grid.ColumnDefinitions>
-                                  <TextBox Text="{Binding Parameter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Height="30" FontSize="11" VerticalContentAlignment="Center" ToolTip="{Binding CmdTip}" />
-                                  <ComboBox Grid.Column="1" Width="108" Margin="4,0,0,0" ItemsSource="{Binding Terminals}" SelectedValuePath="Tag" DisplayMemberPath="DisplayText" SelectedValue="{Binding CommandTerminal, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FlatComboBoxStyle}" Height="30" FontSize="10" />
-                                </Grid>
-                                <TextBox Text="{Binding NthWindowIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Height="30" FontSize="11" VerticalContentAlignment="Center" Visibility="{Binding IsSwitchWindowType, Converter={StaticResource BoolToVis}}" ToolTip="{Binding TaskbarSlotTip}" />
-                                <ComboBox SelectedValuePath="Tag" DisplayMemberPath="DisplayText" ItemsSource="{Binding TileLayoutOptions}" SelectedValue="{Binding TileLayout, Mode=TwoWay}" SelectionChanged="TileLayoutComboBox_SelectionChanged" Style="{StaticResource FlatComboBoxStyle}" Height="30" FontSize="11" Visibility="{Binding IsTileType, Converter={StaticResource BoolToVis}}" ToolTip="{Binding TilePresetTip}" />
                               </Grid>
-                              <TextBox Grid.Column="3" Height="30" FontSize="11" Margin="4,0,0,0" VerticalContentAlignment="Center" Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ToolTip="{Binding CustomNameTip}" />
-                              <Button Grid.Column="4" Content="{Binding TestButtonText}" Height="30" Margin="4,0,0,0" Padding="4,0" FontSize="11" Style="{StaticResource ModernButtonStyle}" Click="TestGesture_Click" />
-                              <Button Grid.Column="5" Content="✕" Height="30" Width="30" Padding="0" Margin="4,0,0,0" FontSize="11" Style="{StaticResource DangerButtonStyle}" Click="DeleteGestureMapping_Click" ToolTip="{Binding DeleteButtonTip}" />
-                            </Grid>
+                            </Border>
                           </DataTemplate>
                         </ItemsControl.ItemTemplate>
                       </ItemsControl>
@@ -3989,11 +4077,48 @@
                   <Setter Property="Padding" Value="0" />
                   <Setter Property="Margin" Value="0,0,0,8" />
                   <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                  <Setter Property="Background" Value="Transparent" />
+                  <Setter Property="BorderThickness" Value="0" />
+                  <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                  <Setter Property="Template">
+                    <Setter.Value>
+                      <ControlTemplate TargetType="ListBoxItem">
+                        <Border Name="ContainerBorder" Background="Transparent" BorderThickness="0" CornerRadius="10" SnapsToDevicePixels="True">
+                          <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                        </Border>
+                      </ControlTemplate>
+                    </Setter.Value>
+                  </Setter>
                 </Style>
               </ListBox.ItemContainerStyle>
               <ListBox.ItemTemplate>
                 <DataTemplate>
-                  <Border Background="{DynamicResource CardBackgroundBrush}" BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1" CornerRadius="10" Padding="14,10">
+                  <Border Name="PluginCardBorder" BorderThickness="1" CornerRadius="10" Padding="14,10" SnapsToDevicePixels="True">
+                    <Border.Style>
+                      <Style TargetType="Border">
+                        <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}" />
+                        <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
+                        <Style.Triggers>
+                          <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
+                            <Setter Property="BorderBrush" Value="{DynamicResource AccentPrimaryBrush}" />
+                          </DataTrigger>
+                          <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
+                            <Setter Property="BorderBrush" Value="{DynamicResource AccentPrimaryBrush}" />
+                            <Setter Property="Background" Value="{DynamicResource NavTabActiveBgBrush}" />
+                          </DataTrigger>
+                          <MultiDataTrigger>
+                            <MultiDataTrigger.Conditions>
+                              <Condition Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True" />
+                              <Condition Binding="{Binding Path=(Selector.IsSelectionActive), RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="False" />
+                            </MultiDataTrigger.Conditions>
+                            <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
+                          </MultiDataTrigger>
+                          <DataTrigger Binding="{Binding IsKeyboardFocused, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
+                            <Setter Property="BorderBrush" Value="{DynamicResource AccentPrimaryBrush}" />
+                          </DataTrigger>
+                        </Style.Triggers>
+                      </Style>
+                    </Border.Style>
                     <Grid>
                       <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />

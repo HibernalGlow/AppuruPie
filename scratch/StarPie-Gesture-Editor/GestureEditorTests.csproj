@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWPF>true</UseWPF>
+    <EnableDefaultItems>false</EnableDefaultItems>
+    <AssemblyName>GestureEditorTests</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="TestGestureEditor.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\WinPieGestures\WinPieGestures.csproj" />
+  </ItemGroup>
+</Project>

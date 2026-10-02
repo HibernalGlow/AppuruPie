@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using StarPie.Plugin;
 using WinPieGestures.Plugins;
 
 namespace WinPieGestures;
@@ -9,10 +10,49 @@ namespace WinPieGestures;
 public class GestureMappingViewModel : INotifyPropertyChanged
 {
 	public GestureMapping Mapping { get; }
+	private ICollectionView? _pluginActionOptions;
+
+	private sealed class PluginSessionSnapshot
+	{
+		public PluginActionRef? PluginActionRef { get; set; }
+		public Dictionary<string, string>? ExtensionData { get; set; }
+	}
+
+	private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<GestureMapping, PluginSessionSnapshot> s_sessionSnapshots = new();
+
+	private void SavePluginSessionSnapshot()
+	{
+		if (Mapping.Action.PluginActionRef != null)
+		{
+			var snapshot = s_sessionSnapshots.GetOrCreateValue(Mapping);
+			snapshot.PluginActionRef = Mapping.Action.PluginActionRef;
+			snapshot.ExtensionData = Mapping.Action.ExtensionData != null
+				? new Dictionary<string, string>(Mapping.Action.ExtensionData, StringComparer.OrdinalIgnoreCase)
+				: null;
+		}
+	}
+
+	private void RestorePluginSessionSnapshot()
+	{
+		if (s_sessionSnapshots.TryGetValue(Mapping, out var snapshot))
+		{
+			if (snapshot.PluginActionRef != null)
+			{
+				Mapping.Action.PluginActionRef = snapshot.PluginActionRef;
+			}
+			Mapping.Action.ExtensionData = snapshot.ExtensionData != null
+				? new Dictionary<string, string>(snapshot.ExtensionData, StringComparer.OrdinalIgnoreCase)
+				: null;
+		}
+	}
 
 	public GestureMappingViewModel(GestureMapping mapping)
 	{
 		Mapping = mapping;
+		if (mapping.Action.Type == PluginActionBinding.TypeName && mapping.Action.PluginActionRef != null)
+		{
+			SavePluginSessionSnapshot();
+		}
 	}
 
 	/// <summary>可选图样清单（单段 8 + 常用双段/三段，多段以 "-" 分隔避免歧义）。</summary>
@@ -73,45 +113,45 @@ public class GestureMappingViewModel : INotifyPropertyChanged
 			{
 				return "WindowManager";
 			}
+			if (t == "Url") return "WebUrl";
+			if (t == "App") return "Launch";
+			if (t == "OpenFolder") return "Folder";
+			if (t == "ScreenOcr") return "Ocr";
 			return t;
 		}
 		set
 		{
 			if (!string.IsNullOrEmpty(value))
 			{
+				if (IsExclusiveRecording)
+				{
+					IsExclusiveRecording = false;
+					OnExclusiveRecordingCancelledRequest?.Invoke();
+				}
 				if (value == PluginActionBinding.TypeName)
 				{
-					// 只切类型，**刻意不清插件引用**：用户在内置类型与插件动作之间来回切换时，
-					// 已配好的插件动作不应被清掉（改选具体动作是子下拉的事）。
-					// 引用为空只表示「还没选过」，由子下拉的空状态提示去引导。
 					Type = PluginActionBinding.TypeName;
 				}
 				else if (value == "WindowManager")
 				{
 					if (!IsWindowManagerType)
 					{
-						PluginActionBinding.Clear(Mapping.Action);
-						string? preferredWindowType = ActionTypeCatalog.GetPreferredWindowManagerType();
-						if (preferredWindowType != null)
+						string preferredWindowType = ActionTypeCatalog.GetPreferredWindowManagerType() ?? "Tile";
+						Type = preferredWindowType;
+						if (preferredWindowType == "Tile" && string.IsNullOrEmpty(Mapping.Action.Parameter))
 						{
-							Type = preferredWindowType;
-							if (preferredWindowType == "Tile" && string.IsNullOrEmpty(Mapping.Action.Parameter))
-							{
-								Mapping.Action.Parameter = "2L";
-							}
+							Mapping.Action.Parameter = "2L";
 						}
 					}
 				}
 				else
 				{
-					// 切回内置动作类型时必须清掉插件引用，否则会残留一个
-					// 「Type 是内置类型、却还挂着插件引用」的混合状态。
-					PluginActionBinding.Clear(Mapping.Action);
 					Type = value;
 				}
 				OnPropertyChanged(nameof(AggregatedType));
 				OnPropertyChanged(nameof(IsWindowManagerType));
 				OnPropertyChanged(nameof(IsPluginType));
+				_pluginActionOptions = PluginActionBinding.BuildPluginActionView();
 				OnPropertyChanged(nameof(PluginActionOptions));
 				NotifyAllPropertiesChanged();
 			}
@@ -123,18 +163,22 @@ public class GestureMappingViewModel : INotifyPropertyChanged
 
 	/// <summary>
 	/// 子下拉的候选插件动作，已按插件分组（分组头即插件显示名，本身不可选中）。
-	/// <para>每次求值都重建，以便新启用的插件立刻出现在自己的分组里。</para>
 	/// </summary>
-	public ICollectionView? PluginActionOptions => PluginActionBinding.BuildPluginActionView();
+	public ICollectionView? PluginActionOptions => _pluginActionOptions ??= PluginActionBinding.BuildPluginActionView();
 
 	/// <summary>
 	/// 子下拉当前选中的插件动作全 ID。
 	/// </summary>
 	public string? SelectedPluginActionFullId
 	{
-		get => PluginActionBinding.ProjectSelectedAction(Mapping.Action);
+		get
+		{
+			if (!IsPluginType) return null;
+			return PluginActionBinding.ProjectSelectedAction(Mapping.Action);
+		}
 		set
 		{
+			if (!IsPluginType) return;
 			// ItemsSource 重建时下拉框会把 SelectedValue 置空 —— 那不是用户的意图。
 			// 不忽略的话，每次刷新都会把用户配好的动作清掉。
 			if (string.IsNullOrEmpty(value)) return;
@@ -143,18 +187,129 @@ public class GestureMappingViewModel : INotifyPropertyChanged
 
 			if (PluginActionBinding.Apply(Mapping.Action, value))
 			{
+				if (Mapping.Action.PluginActionRef != null)
+				{
+					SavePluginSessionSnapshot();
+				}
 				OnPropertyChanged(nameof(SelectedPluginActionFullId));
 				OnPropertyChanged(nameof(IsPluginActionBroken));
+				OnPropertyChanged(nameof(HasPluginParameters));
+				OnPropertyChanged(nameof(MissingRequiredPluginParametersCount));
+				OnPropertyChanged(nameof(HasMissingRequiredPluginParameters));
+				OnPropertyChanged(nameof(PluginParamsButtonText));
+				OnPropertyChanged(nameof(PluginParamsTip));
 				NotifyAllPropertiesChanged();
 			}
 		}
 	}
 
+	public bool HasPluginParameters
+	{
+		get
+		{
+			if (!IsPluginType) return false;
+			string? fullId = Mapping.Action.PluginActionRef?.FullId;
+			if (string.IsNullOrEmpty(fullId)) return false;
+			if (PluginHost.TryGetAction(fullId, out PluginActionRegistration reg))
+			{
+				return reg.Parameters != null && reg.Parameters.Count > 0;
+			}
+			return false;
+		}
+	}
+
+	public static bool HasRequiredParameters(IEnumerable<ParameterField>? parameters)
+	{
+		if (parameters == null) return false;
+		foreach (var p in parameters)
+		{
+			if (p.Required && p.Type != ParameterFieldType.Bool)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public static int CountMissingRequiredParameters(
+		IEnumerable<ParameterField>? parameters,
+		IReadOnlyDictionary<string, string>? extensionData)
+	{
+		if (parameters == null) return 0;
+		int count = 0;
+		foreach (var p in parameters)
+		{
+			if (p.Required && p.Type != ParameterFieldType.Bool)
+			{
+				if (extensionData == null ||
+					!extensionData.TryGetValue(p.Key, out string? val) ||
+					string.IsNullOrWhiteSpace(val))
+				{
+					count++;
+				}
+			}
+		}
+		return count;
+	}
+
+	public int MissingRequiredPluginParametersCount
+	{
+		get
+		{
+			if (!IsPluginType) return 0;
+			string? fullId = Mapping.Action.PluginActionRef?.FullId;
+			if (string.IsNullOrEmpty(fullId)) return 0;
+			if (PluginHost.TryGetAction(fullId, out PluginActionRegistration reg))
+			{
+				return CountMissingRequiredParameters(reg.Parameters, Mapping.Action.ExtensionData);
+			}
+			return 0;
+		}
+	}
+
+	public bool HasMissingRequiredPluginParameters => MissingRequiredPluginParametersCount > 0;
+
+	public string PluginParamsButtonText
+	{
+		get
+		{
+			string text = I18n.T("PluginsCardSettingsButton");
+			return HasMissingRequiredPluginParameters ? text.Replace("⚙", "⚠️") : text;
+		}
+	}
+
+	public string PluginParamsTip
+	{
+		get
+		{
+			int missingCount = MissingRequiredPluginParametersCount;
+			if (missingCount > 0)
+			{
+				return string.Format(I18n.T("PluginsPanelRequiredParams"), missingCount);
+			}
+
+			string? fullId = Mapping.Action.PluginActionRef?.FullId;
+			if (!string.IsNullOrEmpty(fullId) && PluginHost.TryGetAction(fullId, out PluginActionRegistration reg))
+			{
+				if (HasRequiredParameters(reg.Parameters))
+				{
+					return I18n.T("PluginsCardSettingsButton");
+				}
+			}
+
+			return I18n.T("PluginsPanelAllOptional");
+		}
+	}
+
+	public string OpacityTip => I18n.T("TipGestureOpacity");
+
+	public string PluginActionBrokenTip => I18n.T("PluginsActionBrokenHint");
+
 	/// <summary>
 	/// 所引用的插件动作是否已失效（插件被停用或卸载）。
 	/// <para>与「尚未选定」严格区分：这种情况必须显式提示，否则用户会以为自己的配置丢了。</para>
 	/// </summary>
-	public bool IsPluginActionBroken => PluginActionBinding.IsReferenceBroken(Mapping.Action);
+	public bool IsPluginActionBroken => IsPluginType && PluginActionBinding.IsReferenceBroken(Mapping.Action);
 
 	public bool IsWindowManagerType => 
 		Type == "Tile" || Type == "ToggleTopmost" || Type == "MoveMonitor" || 
@@ -189,6 +344,7 @@ public class GestureMappingViewModel : INotifyPropertyChanged
 		}
 		set
 		{
+			if (!IsWindowManagerType) return;
 			if (value == "ToggleTopmost") { Type = "ToggleTopmost"; Mapping.Action.Parameter = ""; }
 			else if (value == "MoveMonitor") { Type = "MoveMonitor"; Mapping.Action.Parameter = ""; }
 			else if (value == "WindowOpacity") { Type = "WindowOpacity"; if (string.IsNullOrEmpty(Mapping.Action.Parameter)) Mapping.Action.Parameter = "80"; }
@@ -210,6 +366,10 @@ public class GestureMappingViewModel : INotifyPropertyChanged
 
 	public void NotifyAllPropertiesChanged()
 	{
+		if (IsPluginType && Mapping.Action.PluginActionRef != null)
+		{
+			SavePluginSessionSnapshot();
+		}
 		OnPropertyChanged(nameof(Type));
 		OnPropertyChanged(nameof(AggregatedType));
 		OnPropertyChanged(nameof(IsHotkeyType));
@@ -221,6 +381,11 @@ public class GestureMappingViewModel : INotifyPropertyChanged
 		OnPropertyChanged(nameof(IsSwitchWindowType));
 		OnPropertyChanged(nameof(IsTileType));
 		OnPropertyChanged(nameof(IsOcrType));
+		OnPropertyChanged(nameof(IsShellToolType));
+		OnPropertyChanged(nameof(ShellToolTitle));
+		OnPropertyChanged(nameof(BrowseShellToolTip));
+		OnPropertyChanged(nameof(PickShellToolText));
+		OnPropertyChanged(nameof(WebUrlTip));
 		OnPropertyChanged(nameof(CanInheritAppIcon));
 		OnPropertyChanged(nameof(InheritAppIconPath));
 		OnPropertyChanged(nameof(HasInheritedAppIcon));
@@ -244,6 +409,29 @@ public class GestureMappingViewModel : INotifyPropertyChanged
 		OnPropertyChanged(nameof(IsPluginType));
 		OnPropertyChanged(nameof(SelectedPluginActionFullId));
 		OnPropertyChanged(nameof(IsPluginActionBroken));
+		OnPropertyChanged(nameof(HasPluginParameters));
+		OnPropertyChanged(nameof(MissingRequiredPluginParametersCount));
+		OnPropertyChanged(nameof(HasMissingRequiredPluginParameters));
+		OnPropertyChanged(nameof(PluginParamsButtonText));
+		OnPropertyChanged(nameof(PluginParamsTip));
+		OnPropertyChanged(nameof(PluginActionBrokenTip));
+		OnPropertyChanged(nameof(OpacityTip));
+		OnPropertyChanged(nameof(Arguments));
+		OnPropertyChanged(nameof(IsExclusiveRecording));
+		OnPropertyChanged(nameof(PauseHotkeysButtonText));
+		OnPropertyChanged(nameof(PauseHotkeysToolTip));
+		OnPropertyChanged(nameof(HotkeyBuilderButtonText));
+		OnPropertyChanged(nameof(HotkeyBuilderToolTip));
+		OnPropertyChanged(nameof(LaunchArgsLabel));
+		OnPropertyChanged(nameof(LaunchArgsToolTip));
+		OnPropertyChanged(nameof(PickProgramButtonText));
+		OnPropertyChanged(nameof(PickProgramToolTip));
+		OnPropertyChanged(nameof(CaptureWindowButtonText));
+		OnPropertyChanged(nameof(CaptureWindowToolTip));
+		OnPropertyChanged(nameof(BrowseExeButtonText));
+		OnPropertyChanged(nameof(BrowseExeToolTip));
+		OnPropertyChanged(nameof(RunAsStandardUserLabel));
+		OnPropertyChanged(nameof(RunAsStandardUserToolTip));
 	}
 
 	public string Pattern
@@ -266,21 +454,56 @@ public class GestureMappingViewModel : INotifyPropertyChanged
 		{
 			if (!string.IsNullOrEmpty(value) && Mapping.Action.Type != value)
 			{
+				if (IsExclusiveRecording)
+				{
+					IsExclusiveRecording = false;
+					OnExclusiveRecordingCancelledRequest?.Invoke();
+				}
+				bool wasPlugin = IsPluginType || Mapping.Action.PluginActionRef != null;
+				if (value != PluginActionBinding.TypeName)
+				{
+					if (wasPlugin)
+					{
+						SavePluginSessionSnapshot();
+						PluginActionBinding.Clear(Mapping.Action);
+					}
+				}
+				else
+				{
+					RestorePluginSessionSnapshot();
+				}
+
 				Mapping.Action.Type = value;
 				OnPropertyChanged(nameof(Type));
+				OnPropertyChanged(nameof(AggregatedType));
 				OnPropertyChanged(nameof(IsHotkeyType));
 				OnPropertyChanged(nameof(IsLaunchType));
+				OnPropertyChanged(nameof(IsWebUrlType));
 				OnPropertyChanged(nameof(IsFolderType));
 				OnPropertyChanged(nameof(IsSystemType));
 				OnPropertyChanged(nameof(IsCommandType));
 				OnPropertyChanged(nameof(IsSwitchWindowType));
 				OnPropertyChanged(nameof(IsTileType));
+				OnPropertyChanged(nameof(IsOcrType));
+				OnPropertyChanged(nameof(IsShellToolType));
+				OnPropertyChanged(nameof(IsWindowManagerType));
+				OnPropertyChanged(nameof(WindowManagerSubMode));
+				OnPropertyChanged(nameof(IsTileSubMode));
+				OnPropertyChanged(nameof(IsOpacitySubMode));
+				OnPropertyChanged(nameof(IsSwitchWindowSubMode));
 
 				// 类型切换是子下拉**唯一**需要重建候选集的时机；
 				// 其余路径（例如用户刚选定了一个动作）刻意不重建，见 NotifyAllPropertiesChanged 的说明。
 				OnPropertyChanged(nameof(IsPluginType));
+				_pluginActionOptions = PluginActionBinding.BuildPluginActionView();
 				OnPropertyChanged(nameof(PluginActionOptions));
+				OnPropertyChanged(nameof(SelectedPluginActionFullId));
 				OnPropertyChanged(nameof(IsPluginActionBroken));
+				OnPropertyChanged(nameof(HasPluginParameters));
+				OnPropertyChanged(nameof(MissingRequiredPluginParametersCount));
+				OnPropertyChanged(nameof(HasMissingRequiredPluginParameters));
+				OnPropertyChanged(nameof(PluginParamsButtonText));
+				OnPropertyChanged(nameof(PluginParamsTip));
 			}
 		}
 	}
@@ -302,6 +525,27 @@ public class GestureMappingViewModel : INotifyPropertyChanged
 	public bool IsTileType => Type == "Tile";
 
 	public bool IsOcrType => Type == "Ocr" || Type == "ScreenOcr";
+
+	public bool IsShellToolType => Type == "ShellTool";
+
+	public string ShellToolTitle
+	{
+		get
+		{
+			if (IsShellToolType && !string.IsNullOrEmpty(Parameter))
+			{
+				var tool = ShellActionPickerWindow.ShellTools?.FirstOrDefault(t => t.Id == Parameter || string.Equals(t.Verb, Parameter, StringComparison.OrdinalIgnoreCase));
+				if (tool != null) return $"{tool.Name} ({tool.Id})";
+				return Parameter;
+			}
+			return I18n.T("FocusShellToolDefaultTitle");
+		}
+	}
+
+	public string BrowseShellToolTip => I18n.T("FocusPickShellToolBtnToolTip");
+	public string PickShellToolText => I18n.T("FocusPickShellToolBtnText");
+
+	public string WebUrlTip => I18n.T("WebUrlToolTip");
 
 	public bool CanInheritAppIcon => Type != "Launch" && Type != "App";
 
@@ -328,6 +572,99 @@ public class GestureMappingViewModel : INotifyPropertyChanged
 		}
 	}
 
+	public System.Action? OnExclusiveRecordingCancelledRequest { get; set; }
+
+	public string Arguments
+	{
+		get => Mapping.Action.Arguments ?? "";
+		set
+		{
+			if (Mapping.Action.Arguments != value)
+			{
+				Mapping.Action.Arguments = value ?? "";
+				OnPropertyChanged(nameof(Arguments));
+			}
+		}
+	}
+
+	private static readonly HashSet<GestureMapping> s_activelyRecordingMappings = new();
+	private static readonly object s_recordingLock = new();
+
+	public static bool IsMappingInExclusiveRecording(GestureMapping? mapping)
+	{
+		if (mapping == null) return false;
+		lock (s_recordingLock)
+		{
+			return s_activelyRecordingMappings.Contains(mapping);
+		}
+	}
+
+	public static void SetMappingExclusiveRecording(GestureMapping? mapping, bool isRecording)
+	{
+		if (mapping == null) return;
+		lock (s_recordingLock)
+		{
+			if (isRecording)
+			{
+				s_activelyRecordingMappings.Add(mapping);
+			}
+			else
+			{
+				s_activelyRecordingMappings.Remove(mapping);
+			}
+		}
+	}
+
+	public static void ClearAllExclusiveRecordingStates()
+	{
+		lock (s_recordingLock)
+		{
+			s_activelyRecordingMappings.Clear();
+		}
+	}
+
+	public bool IsExclusiveRecording
+	{
+		get => IsMappingInExclusiveRecording(Mapping);
+		set
+		{
+			bool current = IsMappingInExclusiveRecording(Mapping);
+			if (current != value)
+			{
+				SetMappingExclusiveRecording(Mapping, value);
+				OnPropertyChanged(nameof(IsExclusiveRecording));
+				OnPropertyChanged(nameof(PauseHotkeysButtonText));
+				OnPropertyChanged(nameof(PauseHotkeysToolTip));
+			}
+		}
+	}
+
+	public string PauseHotkeysButtonText => IsExclusiveRecording
+		? I18n.T("TogglePauseHotkeysBtnActiveText")
+		: I18n.T("TogglePauseHotkeysBtnText");
+
+	public string PauseHotkeysToolTip => IsExclusiveRecording
+		? I18n.T("TogglePauseHotkeysBtnActiveToolTip")
+		: I18n.T("TogglePauseHotkeysBtnToolTip");
+
+	public string HotkeyBuilderButtonText => I18n.T("FocusHotkeyBuilderBtnText");
+	public string HotkeyBuilderToolTip => I18n.T("FocusHotkeyBuilderBtnText");
+
+	public string LaunchArgsLabel => I18n.T("FocusLaunchArgsLabel");
+	public string LaunchArgsToolTip => I18n.T("FocusLaunchArgsToolTip");
+
+	public string PickProgramButtonText => I18n.T("FocusLaunchPickProgramBtnText");
+	public string PickProgramToolTip => I18n.T("FocusLaunchPickProgramBtnToolTip");
+
+	public string CaptureWindowButtonText => I18n.T("FocusLaunchCaptureWindowBtnText");
+	public string CaptureWindowToolTip => I18n.T("FocusLaunchCaptureWindowBtnToolTip");
+
+	public string BrowseExeButtonText => I18n.T("FocusLaunchBrowseExeBtnText");
+	public string BrowseExeToolTip => I18n.T("FocusLaunchBrowseExeBtnToolTip");
+
+	public string RunAsStandardUserLabel => I18n.T("FocusLaunchAsUserTitle");
+	public string RunAsStandardUserToolTip => I18n.T("FocusLaunchAsUserSubtitle");
+
 	/// <summary>平铺布局下拉（key → 显示名）。</summary>
 	public List<ActionTypeOption> TileLayoutOptions
 	{
@@ -352,10 +689,11 @@ public class GestureMappingViewModel : INotifyPropertyChanged
 	{
 		get
 		{
-			return Mapping.Action.Parameter ?? "";
+			return IsTileSubMode ? (Mapping.Action.Parameter ?? "") : "";
 		}
 		set
 		{
+			if (!IsTileSubMode) return;
 			if (Mapping.Action.Parameter != value)
 			{
 				Mapping.Action.Parameter = value;
@@ -372,6 +710,7 @@ public class GestureMappingViewModel : INotifyPropertyChanged
 		get => Mapping.Action.CommandTerminal ?? "cmd";
 		set
 		{
+			if (!IsCommandType) return;
 			if (Mapping.Action.CommandTerminal != value && !string.IsNullOrEmpty(value))
 			{
 				Mapping.Action.CommandTerminal = value;
@@ -383,9 +722,10 @@ public class GestureMappingViewModel : INotifyPropertyChanged
 	/// <summary>系统控制预设（Key ↔ Parameter）。</summary>
 	public string SelectedSystemPreset
 	{
-		get => Parameter;
+		get => IsSystemType ? Parameter : "";
 		set
 		{
+			if (!IsSystemType) return;
 			if (Parameter != value && !string.IsNullOrEmpty(value))
 			{
 				Parameter = value;
@@ -397,9 +737,10 @@ public class GestureMappingViewModel : INotifyPropertyChanged
 	/// <summary>切换窗口的序号（仅数字 1~20）。</summary>
 	public string NthWindowIndex
 	{
-		get => Parameter;
+		get => IsSwitchWindowSubMode ? Parameter : "";
 		set
 		{
+			if (!IsSwitchWindowSubMode) return;
 			string digits = string.IsNullOrEmpty(value) ? "" : new string(value.Where(char.IsDigit).ToArray());
 			if (int.TryParse(digits, out int n))
 			{

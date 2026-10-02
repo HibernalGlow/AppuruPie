@@ -1360,7 +1360,9 @@ public static string FormatKeyName(string? keyStr, uint vkCode = 0)
 		Add("FocusRestoreInheritBtnToolTip", "清除当前槽位的专属覆写，恢复继承全局方案对应方位的动作", "清除目前位置的專屬覆寫，恢復繼承全域方案對應方位的動作", "Clear local override for this slot and restore inheritance from global profile", "このスロットの個別上書きを解除し、グローバル設定の継承に戻します");
 		Add("FocusTestActionBtnText", "▶ 测试触发", "▶ 測試觸發", "▶ Test Trigger", "▶ テスト実行");
 		Add("TogglePauseHotkeysBtnText", "⏸️ 暂停全局热键", "⏸️ 暫停全域快速鍵", "⏸️ Pause Global Hotkeys", "⏸️ グローバルショートカットを一時停止");
+		Add("TogglePauseHotkeysBtnActiveText", "🔴 正在独占录制 (已暂停全局热键)", "🔴 正在獨佔錄入 (已暫停全域快速鍵)", "🔴 Recording Exclusively (Global Hotkeys Paused)", "🔴 独占記録中 (グローバルショートカット一時停止)");
 		Add("TogglePauseHotkeysBtnToolTip", "暂停桌面系统及其他软件的所有全局快捷键，在此独占录入快捷键而不会触发系统（如 Win+D、Alt+Tab、截屏等）或其他软件", "暫停桌面系統及其他軟體的所有全域快速鍵，在此獨佔錄入快速鍵而不會觸發系統（如 Win+D、Alt+Tab、截圖等）或其他軟體", "Pause all global shortcuts in Windows and other apps to record combinations without triggering system hotkeys (Win+D, Alt+Tab, etc.)", "システムや他アプリのグローバルショートカットを一時停止し、誤爆せずに安全に入力記録します");
+		Add("TogglePauseHotkeysBtnActiveToolTip", "当前桌面系统及所有其他软件全局热键已被暂时暂停！在此按下任意按键组合（如 Win+D、Alt+Tab、截屏）均可直接录入，不会触发外部动作。点击即可恢复。", "目前桌面系統及所有其他軟體全域快速鍵已被暫時暫停！在此按下任意按鍵組合（如 Win+D、Alt+Tab、截圖）均可直接錄入，不會觸發外部動作。點擊即可恢復。", "Global shortcuts are paused across Windows and all apps! Press any hotkey combination (Win+D, Alt+Tab, etc.) to record directly without triggering external actions. Click to resume.", "システムと全アプリのグローバルショートカットが一時停止されています。Win+DやAlt+Tab等のキー組み合わせを安全に直接記録できます。クリックして再開します。");
 		Add("FocusHotkeyBuilderBtnText", "⚙️ 拼装组合", "⚙️ 拼裝組合", "⚙️ Hotkey Builder", "⚙️ 組み合わせビルダー");
 		Add("FocusLaunchPathToolTip", "应用程序路径", "應用程式路徑", "Application executable path", "アプリケーション実行パス");
 		Add("FocusLaunchPickProgramBtnText", "📦 软件库选择...", "📦 軟體庫選擇...", "📦 Select from Apps...", "📦 アプリ一覧から選択...");
@@ -2313,6 +2315,16 @@ Add("AboutCheckUpdate", "🔄 检查更新", "🔄 檢查更新", "🔄 Check fo
 		Add("PluginsOnboardingBannerText", "尚有 {0} 项官方核心插件未安装。安装后可使用打开文件夹、启动程序、网页跳转、系统控制等常用内置动作。", "尚有 {0} 項官方核心外掛未安裝。安裝後可使用開啟資料夾、啟動程式、網頁跳轉、系統控制等常用內建動作。", "{0} official core plugin(s) are not installed. Install them to use commonly used built-in actions like Open Folder, Launch App, Web URL, and System Control.", "公式コアプラグインが {0} 件未導入です。インストールするとフォルダーを開く、アプリ起動、Web ページ、システム制御などの機能が使用可能になります。");
 		Add("PluginsOnboardingBannerButton", "⬇️ 一键安装缺失项", "⬇️ 一鍵安裝缺失項", "⬇️ Install Missing Plugins", "⬇️ 不足プラグインを一括導入");
 		Add("PluginsOnboardingOpenDialogFailed", "无法打开官方插件安装引导窗口：{0}", "無法開啟官方外掛安裝引導視窗：{0}", "Failed to open official plugins onboarding dialog: {0}", "公式プラグインの導入ガイドウィンドウを開けませんでした: {0}");
+
+		// --- R7 文件选择与独占录制提示四语言本地化 (F4) ---
+		Add("FileDialogFilterExecutable", "应用程序 (*.exe;*.lnk;*.bat;*.cmd)|*.exe;*.lnk;*.bat;*.cmd|所有文件 (*.*)|*.*", "應用程式 (*.exe;*.lnk;*.bat;*.cmd)|*.exe;*.lnk;*.bat;*.cmd|所有檔案 (*.*)|*.*", "Applications (*.exe;*.lnk;*.bat;*.cmd)|*.exe;*.lnk;*.bat;*.cmd|All Files (*.*)|*.*", "実行可能ファイル (*.exe;*.lnk;*.bat;*.cmd)|*.exe;*.lnk;*.bat;*.cmd|すべてのファイル (*.*)|*.*");
+		Add("FileDialogTitleSelectProgram", "选择要启动的应用程序或快捷方式", "選擇要啟動的應用程式或捷徑", "Select application or shortcut to launch", "起動するアプリケーションまたはショートカットを選択");
+		Add("FolderDialogDescription", "选择要打开的本地文件夹", "選擇要開啟的本機資料夾", "Select folder to open", "開くフォルダーを選択");
+		Add("ExclusiveRecordingStatePrompt", "🔴 全局热键已暂停，请按下快捷键组合 (如 Win+D、Alt+Tab)...", "🔴 全域快速鍵已暫停，請按下快速鍵組合 (如 Win+D、Alt+Tab)...", "🔴 Global hotkeys paused; press a key combination (e.g. Win+D, Alt+Tab)...", "🔴 グローバルキー一時停止中、キーを入力してください (例: Win+D, Alt+Tab)...");
+		Add("ExclusiveRecordingModifiersPrompt", "🔴 {0} + ... (按Esc取消)", "🔴 {0} + ... (按Esc取消)", "🔴 {0} + ... (Press Esc to cancel)", "🔴 {0} + ... (Escでキャンセル)");
+		Add("ExclusiveRecordingBalloonActivated", "⏸️ 已暂时暂停桌面系统及其他软件全局快捷键，在此按下目标按键组合进行录入（按 Esc 取消）", "⏸️ 已暫時暫停桌面系統及其他軟體全域快速鍵，在此按下目標按鍵組合進行錄入（按 Esc 取消）", "⏸️ Global hotkeys temporarily paused; press target keys to record (Esc to cancel)", "⏸️ グローバルキーを一時停止しました。キーを押して記録してください（Escでキャンセル）");
+		Add("ExclusiveRecordingBalloonRestored", "▶️ 已恢复全局热键与按键正常监听", "▶️ 已恢復全域快速鍵與按鍵正常監聽", "▶️ Global hotkeys and normal key listening restored", "▶️ グローバルキーと通常のキー監視を再開しました");
+		Add("ExclusiveRecordingBalloonRecorded", "✅ 已录制快捷键: {0}（已恢复全局热键）", "✅ 已錄入快速鍵: {0}（已恢復全域快速鍵）", "✅ Recorded hotkey: {0} (Global hotkeys restored)", "✅ ショートカットを記録しました: {0}（グローバルキー復帰）");
 
 		Translations = dictionary;
 	}
