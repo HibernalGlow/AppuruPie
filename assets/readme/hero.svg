@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="420" viewBox="0 0 1200 420" role="img" aria-labelledby="hero-title hero-desc">
+  <title id="hero-title">苹果派 AppuruPie · Windows 鼠标轮盘手势工具</title>
+  <desc id="hero-desc">左侧为项目名与中英双语价值说明，右侧按产品真实几何绘制 8 扇区轮盘：第 0 位固定正东、360 度等分，扇区即苹果派切块，外圈是酥皮，光标停在露出果肉色的高亮扇区上并带外圈子环，中心核圆为带透气切口的派心，极坐标角 θ = atan2(dy, dx) 标注命中判定。</desc>
+
+  <defs>
+    <linearGradient id="filling" x1="800" y1="360" x2="1110" y2="60" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#8E1526"/>
+      <stop offset="0.55" stop-color="#C8102E"/>
+      <stop offset="1" stop-color="#E8503A"/>
+    </linearGradient>
+    <linearGradient id="crust" x1="800" y1="360" x2="1110" y2="60" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#A96A22"/>
+      <stop offset="0.5" stop-color="#DFA24E"/>
+      <stop offset="1" stop-color="#F2CE93"/>
+    </linearGradient>
+    <radialGradient id="halo" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#C8102E" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#FAF0DC" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1200" height="420" rx="26" fill="#FAF0DC"/>
+  <rect x="0.5" y="0.5" width="1199" height="419" rx="26" fill="none" stroke="#E3C893"/>
+
+  <g id="title-block" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, PingFang SC, sans-serif">
+    <text x="64" y="80" font-size="18" letter-spacing="2.6" fill="#A9743E">WINDOWS 10 / 11 · RADIAL PIE MENU · MOUSE GESTURE</text>
+    <text x="64" y="158" font-size="72" font-weight="700" fill="#7B1620">苹果派<tspan font-size="40" font-weight="400" fill="#B5762A" dx="20">AppuruPie</tspan></text>
+    <text x="64" y="204" font-size="30" fill="#8A2230">把高频操作变成肌肉记忆的鼠标轮盘</text>
+    <text x="64" y="240" font-size="20" fill="#A08568">Hold the right button, sweep to a sector, release.</text>
+    <text x="64" y="268" font-size="20" fill="#A08568">4 / 8 / 12 sectors · sub-wheels · trail gestures · tiling · OCR</text>
+
+    <g font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="18" fill="#9A6B3C">
+      <text x="64" y="322">.NET 8 WPF · Win32 WH_MOUSE_LL · MIT</text>
+      <text x="64" y="350">后台常驻 15~30 MB（项目自测基准）</text>
+      <text x="64" y="378">命中判定 θ = atan2(Δy, Δx) · 360°/N 等分</text>
+    </g>
+  </g>
+
+  <g id="wheel-proof">
+    <circle cx="950" cy="210" r="230" fill="url(#halo)"/>
+
+    <g id="sectors" fill="url(#filling)" opacity="0.96">
+      <path d="M1091.0,158.7 A150,150 0 0 1 1091.0,261.3 L1012.0,232.6 A66,66 0 0 0 1012.0,187.4 Z"/>
+      <path d="M1085.9,273.4 A150,150 0 0 1 1013.4,345.9 L977.9,269.8 A66,66 0 0 0 1009.8,237.9 Z"/>
+      <path d="M1001.3,351.0 A150,150 0 0 1 898.7,351.0 L927.4,272.0 A66,66 0 0 0 972.6,272.0 Z"/>
+      <path d="M886.6,345.9 A150,150 0 0 1 814.1,273.4 L890.2,237.9 A66,66 0 0 0 922.1,269.8 Z"/>
+      <path d="M809.0,261.3 A150,150 0 0 1 809.0,158.7 L888.0,187.4 A66,66 0 0 0 888.0,232.6 Z"/>
+      <path d="M814.1,146.6 A150,150 0 0 1 886.6,74.1 L922.1,150.2 A66,66 0 0 0 890.2,182.1 Z"/>
+      <path d="M898.7,69.0 A150,150 0 0 1 1001.3,69.0 L972.6,148.0 A66,66 0 0 0 927.4,148.0 Z"/>
+    </g>
+
+    <circle id="crust-rim" cx="950" cy="210" r="158" fill="none" stroke="url(#crust)" stroke-width="16"/>
+
+    <g id="highlight">
+      <path d="M1013.4,74.1 A150,150 0 0 1 1085.9,146.6 L1009.8,182.1 A66,66 0 0 0 977.9,150.2 Z" fill="#FFF8EA" stroke="#8E1526" stroke-width="2.5"/>
+      <path d="M1037.3,45.8 A186,186 0 0 1 1114.2,122.7 L1100.1,130.2 A170,170 0 0 0 1029.8,59.9 Z" fill="#DFA24E" stroke="#A96A22" stroke-width="2"/>
+    </g>
+
+    <g id="hit-test" stroke-linecap="round">
+      <line x1="999.5" y1="160.5" x2="1096.4" y2="63.6" stroke="#7B1620" stroke-width="2" stroke-dasharray="6 6"/>
+      <path d="M1050.0,210.0 A100,100 0 0 0 1020.7,139.3" fill="none" stroke="#7B1620" stroke-width="2"/>
+      <text x="1063" y="176" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="20" fill="#7B1620">θ</text>
+    </g>
+
+    <circle cx="950" cy="210" r="58" fill="url(#crust)"/>
+    <circle cx="950" cy="210" r="58" fill="none" stroke="#A96A22" stroke-width="2.5"/>
+    <g id="vents" stroke="#7A4A18" stroke-width="5" stroke-linecap="round">
+      <line x1="950" y1="186" x2="950" y2="164"/>
+      <line x1="970.8" y1="222" x2="989.8" y2="233"/>
+      <line x1="929.2" y1="222" x2="910.2" y2="233"/>
+    </g>
+    <g id="cursor" transform="translate(1030 114)" fill="#7B1620" stroke="#FFF8EA" stroke-width="1.4">
+      <path d="M0,0 L0,33 L8.3,24.8 L13.9,37 L19.1,34.4 L13.5,22.4 L23.8,22.4 Z"/>
+    </g>
+  </g>
+</svg>

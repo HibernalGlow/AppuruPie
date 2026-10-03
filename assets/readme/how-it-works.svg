@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="300" viewBox="0 0 1200 300" role="img" aria-labelledby="flow-title flow-desc">
+  <title id="flow-title">苹果派 AppuruPie 手势执行链路 / How a gesture runs</title>
+  <desc id="flow-desc">四步序列：按住触发键、越过阈值唤出轮盘、按极坐标角距命中最近的扇区、松开后由 SendInput 或插件执行动作。对应低级鼠标钩子、手势状态机与动作调度三段实现。</desc>
+
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#B5762A"/>
+    </marker>
+    <clipPath id="mouse-right">
+      <path d="M26,0 L28,0 A24,24 0 0 1 52,24 L52,42 A24,24 0 0 1 28,66 L26,66 Z"/>
+    </clipPath>
+  </defs>
+
+  <rect width="1200" height="300" rx="26" fill="#FAF0DC"/>
+  <rect x="0.5" y="0.5" width="1199" height="299" rx="26" fill="none" stroke="#E3C893"/>
+
+  <g id="cards" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, PingFang SC, sans-serif">
+    <g id="step-1">
+      <rect x="48" y="40" width="252" height="196" rx="20" fill="#FFF8EA" stroke="#E3C893"/>
+      <text x="70" y="76" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="18" fill="#A9743E">01</text>
+      <text x="70" y="110" font-size="22" fill="#7B1620">按住触发键</text>
+      <text x="70" y="136" font-size="18" fill="#A08568">Hold the trigger</text>
+      <g transform="translate(148 152)">
+        <rect x="0" y="0" width="52" height="66" rx="24" fill="#FAF0DC" stroke="#B5762A" stroke-width="2.5"/>
+        <rect x="26" y="0" width="26" height="66" fill="#C8102E" opacity="0.92" clip-path="url(#mouse-right)"/>
+        <line x1="26" y1="2" x2="26" y2="26" stroke="#B5762A" stroke-width="2.5"/>
+      </g>
+    </g>
+
+    <g id="step-2">
+      <rect x="332" y="40" width="252" height="196" rx="20" fill="#FFF8EA" stroke="#E3C893"/>
+      <text x="354" y="76" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="18" fill="#A9743E">02</text>
+      <text x="354" y="110" font-size="22" fill="#7B1620">越阈值唤出</text>
+      <text x="354" y="136" font-size="18" fill="#A08568">Drag past threshold</text>
+      <g transform="translate(424 150)">
+        <circle cx="30" cy="34" r="32" fill="none" stroke="#DFA24E" stroke-width="6"/>
+        <circle cx="30" cy="34" r="22" fill="none" stroke="#C8102E" stroke-width="2.5"/>
+        <circle cx="30" cy="34" r="9" fill="#FFF8EA" stroke="#B5762A" stroke-width="2"/>
+        <path d="M84,70 L54,48" fill="none" stroke="#8E1526" stroke-width="2.5" stroke-dasharray="5 5" marker-end="url(#arrow)"/>
+      </g>
+    </g>
+
+    <g id="step-3">
+      <rect x="616" y="40" width="252" height="196" rx="20" fill="#FFF8EA" stroke="#E3C893"/>
+      <text x="638" y="76" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="18" fill="#A9743E">03</text>
+      <text x="638" y="110" font-size="22" fill="#7B1620">极坐标命中</text>
+      <text x="638" y="136" font-size="18" fill="#A08568">Nearest angle wins</text>
+      <g transform="translate(684 150)">
+        <path d="M18,62 L74,62 A56,56 0 0 0 57.6,22.4 Z" fill="#FFF8EA" stroke="#8E1526" stroke-width="2"/>
+        <g stroke="#C8102E" stroke-width="2.5" stroke-linecap="round">
+          <line x1="18" y1="62" x2="18" y2="6"/>
+          <line x1="18" y1="62" x2="74" y2="62"/>
+          <line x1="18" y1="62" x2="57.6" y2="22.4"/>
+        </g>
+        <path d="M52,62 A34,34 0 0 0 42,38" fill="none" stroke="#B5762A" stroke-width="2.5"/>
+        <circle cx="58.8" cy="45.5" r="7" fill="#7B1620"/>
+        <circle cx="18" cy="62" r="4" fill="#DFA24E"/>
+      </g>
+    </g>
+
+    <g id="step-4">
+      <rect x="900" y="40" width="252" height="196" rx="20" fill="#FFF8EA" stroke="#E3C893"/>
+      <text x="922" y="76" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="18" fill="#A9743E">04</text>
+      <text x="922" y="110" font-size="22" fill="#7B1620">松开执行</text>
+      <text x="922" y="136" font-size="18" fill="#A08568">Release to run</text>
+      <g transform="translate(948 152)">
+        <path d="M10,58 L10,12 A46,46 0 0 1 56,58 Z" fill="#C8102E" opacity="0.95"/>
+        <path d="M10,12 A46,46 0 0 1 56,58" fill="none" stroke="#DFA24E" stroke-width="5"/>
+        <path d="M68,36 L90,36" fill="none" stroke="#B5762A" stroke-width="2.5" marker-end="url(#arrow)"/>
+        <rect x="96" y="18" width="92" height="36" rx="11" fill="none" stroke="#B5762A" stroke-width="2"/>
+        <text x="142" y="42" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="16" fill="#A08568">SendInput</text>
+      </g>
+    </g>
+  </g>
+
+  <g id="chevrons" stroke="#B5762A" stroke-width="2.5" fill="none" stroke-linecap="round">
+    <path d="M310,132 l9,9 l-9,9"/>
+    <path d="M594,132 l9,9 l-9,9"/>
+    <path d="M878,132 l9,9 l-9,9"/>
+  </g>
+
+  <text x="48" y="272" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="18" fill="#9A6B3C">钩子回调线程内不做任何 IO · 按下到呈现 &lt; 16ms · 扇区高亮 60 / 120 FPS</text>
+</svg>
